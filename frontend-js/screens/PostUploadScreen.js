@@ -100,7 +100,6 @@ export default function PostUploadScreen() {
             multiline
             style={styles.captionInput}
           />
-
           {/* Image Preview */}
           {/* {image && <Image source={{ uri: image }} style={styles.preview} />} */}
           {image ? (
