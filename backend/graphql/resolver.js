@@ -6,7 +6,13 @@ const jwt = require('jsonwebtoken');
 module.exports = {
   Query: {
     getPosts: async () => {
-      return await Post.find().sort({ createdAt: -1 }).populate('user', 'username profilepic');
+      return await Post.find().sort({ createdAt: -1 }).populate('user');
+    },
+    getUser: async (_, { id }) => {
+      return await User.findById(id);
+    },
+    getPostsByUser: async (_, { userId }) => {
+      return await Post.find({ user: userId }).sort({ createdAt: -1 }).populate('user');
     },
     login: async (_, { email, password }) => {
       // console.log("Login attempt for:", password);
@@ -24,7 +30,7 @@ module.exports = {
       const token = jwt.sign(
         { id: user._id, email: user.email },
         process.env.JWT_SECRET,
-        { expiresIn: '1h' }
+        { expiresIn: '7d' }
       );
 
       return {
@@ -37,24 +43,50 @@ module.exports = {
   },
 
   Mutation: {
-    createPost: async (_, { content, image, caption }, context) => {
-      const userId = context.user.id;
+    createPost: async (_, { text, imageBase64 }, context) => {
+      const { user } = context;
+      // console.log("resolver", user);
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
 
-      const post = new Post({
-        content,
-        image,
-        caption,
-        createdAt: new Date().toISOString(),
-        user: userId,
+      const newPost = new Post({
+        text,
+        imageBase64,
+        user: user.id,
+        createdAt: new Date()
       });
+      // console.log("resolver",newPost);
+      return await newPost.save();
+    },
 
-      return await post.save();
+    updateUserProfile: async (
+      _,
+      { nativePlace, address, mobileNumber, profilePicture, coverPicture },
+      context
+    ) => {
+      const { user } = context;
+      if (!user) throw new Error('Not authenticated');
+  
+      const updatedUser = await User.findByIdAndUpdate(
+        user.id,
+        {
+          ...(nativePlace && { nativePlace }),
+          ...(address && { address }),
+          ...(mobileNumber && { mobile: mobileNumber }),
+          ...(profilePicture && { profilePic: profilePicture }),
+          ...(coverPicture && { coverPhoto: coverPicture }),
+        },
+        { new: true }
+      );
+  
+      return updatedUser;
     },
-    likePost: async (_, { id }) => {
-      return await Post.findByIdAndUpdate(id, { $inc: { likes: 1 } }, { new: true });
-    },
-    commentPost: async (_, { id }) => {
-      return await Post.findByIdAndUpdate(id, { $inc: { comments: 1 } }, { new: true });
-    },
+    // likePost: async (_, { id }) => {
+    //   return await Post.findByIdAndUpdate(id, { $inc: { likes: 1 } }, { new: true });
+    // },
+    // commentPost: async (_, { id }) => {
+    //   return await Post.findByIdAndUpdate(id, { $inc: { comments: 1 } }, { new: true });
+    // },
   },
 };

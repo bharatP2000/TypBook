@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   const login = async ({ email, password }) => {
     console.log("email:", password)
     try {
-      const response = await fetch('http://192.168.189.147:5000/graphql', {
+      const response = await fetch('http://192.168.0.137:5000/graphql', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
 
       const json = await response.json();
       const data = json.data.login;
-
+      // console.log(data);
       if (data && data.token) {
         await AsyncStorage.setItem('token', data.token);
         setUser(data);

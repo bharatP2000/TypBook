@@ -1,98 +1,110 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  Image, 
-  FlatList, 
-  TouchableOpacity, 
-  StyleSheet 
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
-
-const dummyData = [
-  {
-    id: '1',
-    username: 'john_doe',
-    profilePic: '',
-    postImage: '',
-    caption: 'Look at this cute kitten!',
-    likes: 0,
-    comments: 0,
-  },
-  {
-    id: '2',
-    username: 'jane_smith',
-    profilePic: '',
-    postImage: '',
-    caption: 'Another adorable kitty!',
-    likes: 0,
-    comments: 0,
-  },
-  {
-    id: '3',
-    username: 'john_doe',
-    profilePic: '',
-    postImage: '',
-    caption: 'Look at this cute kitten!',
-    likes: 0,
-    comments: 0,
-  },
-  {
-    id: '4',
-    username: 'jane_smith',
-    profilePic: '',
-    postImage: '',
-    caption: 'Another adorable kitty!',
-    likes: 0,
-    comments: 0,
-  },
-];
+import { useIsFocused } from '@react-navigation/native';
 
 export default function FeedScreen() {
-  const [posts, setPosts] = useState(dummyData);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const isFocused = useIsFocused();
 
-  const handleLike = (postId) => {
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        return { ...post, likes: post.likes + 1 };
+  const fetchPosts = async () => {
+    const query = `
+      query {
+        getPosts {
+          id
+          text
+          imageBase64
+          createdAt
+          user {
+            username
+          }
+        }
       }
-      return post;
-    }));
+    `;
+
+    try {
+      const res = await fetch('http://192.168.0.137:5000/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+      });
+
+      const json = await res.json();
+      // console.log('📦 Raw GraphQL response:', JSON.stringify(json, null, 2));
+
+      if (json.errors) throw new Error(json.errors[0].message);
+
+      const postsData = json.data?.getPosts;
+      // console.log('✅ Parsed posts:', postsData);
+
+      setPosts(postsData);
+    } catch (err) {
+      console.error('❌ Failed to fetch posts:', err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleComment = (postId) => {
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        return { ...post, comments: post.comments + 1 };
-      }
-      return post;
-    }));
+  useEffect(() => {
+    if (isFocused) {
+      fetchPosts(); // Refresh only when screen is focused
+    }
+  }, [isFocused]);
+
+  const renderPost = ({ item }) => {
+    // console.log('🖼️ Rendering post:', item);
+
+    return (
+      <View style={styles.postContainer}>
+        {/* Header: profile pic + username */}
+        <View style={styles.header}>
+          <Image source={{ uri: '' }} style={styles.profilePic} />
+          <Text style={styles.username}>{item.user?.username || 'Unknown'}</Text>
+        </View>
+
+        {/* Post image */}
+        {item.imageBase64 ? (
+          <Image
+            source={{ uri: item.imageBase64 }}
+            style={styles.postImage}
+          />
+        ) : null}
+
+        {/* Caption */}
+        {item.text ? (
+          <Text style={styles.caption}>{item.text}</Text>
+        ) : null}
+
+        {/* Like and Comment buttons */}
+        <View style={styles.actions}>
+          <TouchableOpacity style={styles.actionBtn}>
+            <Text>👍 Like</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionBtn}>
+            <Text>💬 Comment</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
   };
 
-  const renderPost = ({ item }) => (
-    <View style={styles.postContainer}>
-      {/* Header: profile pic + username */}
-      <View style={styles.header}>
-        <Image source={{ uri: item.profilePic }} style={styles.profilePic} />
-        <Text style={styles.username}>{item.username}</Text>
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#000" />
       </View>
-
-      {/* Post image */}
-      <Image source={{ uri: item.postImage }} style={styles.postImage} />
-
-      {/* Caption */}
-      <Text style={styles.caption}>{item.caption}</Text>
-
-      {/* Like and Comment buttons */}
-      <View style={styles.actions}>
-        <TouchableOpacity onPress={() => handleLike(item.id)} style={styles.actionBtn}>
-          <Text>👍 Like ({item.likes})</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleComment(item.id)} style={styles.actionBtn}>
-          <Text>💬 Comment ({item.comments})</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    );
+  }
 
   return (
     <FlatList
@@ -100,6 +112,7 @@ export default function FeedScreen() {
       keyExtractor={(item) => item.id}
       renderItem={renderPost}
       contentContainerStyle={{ padding: 10 }}
+      ListEmptyComponent={<Text>No posts found.</Text>}
     />
   );
 }
@@ -110,8 +123,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 8,
     overflow: 'hidden',
-    elevation: 3, // shadow on Android
-    shadowColor: '#000', // shadow on iOS
+    elevation: 3,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -125,6 +138,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+    backgroundColor: '#ccc',
   },
   username: {
     marginLeft: 10,
@@ -133,6 +147,7 @@ const styles = StyleSheet.create({
   postImage: {
     width: '100%',
     height: 250,
+    backgroundColor: '#eee',
   },
   caption: {
     padding: 10,

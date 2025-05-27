@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { ApolloServer } = require('apollo-server-express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 
 const typeDefs = require('./graphql/typedefs');
 const resolvers = require('./graphql/resolver');
@@ -10,15 +11,20 @@ const resolvers = require('./graphql/resolver');
 const startServer = async () => {
   const app = express();
   app.use(cors());
-
+  app.use(express.json({ limit: '10mb' }));
   const server = new ApolloServer({
     typeDefs,
     resolvers,
     context: ({ req }) => {
-      const token = req.headers.authorization || '';
+      const authHeader = req.headers.authorization || '';
+      const token = authHeader.startsWith('Bearer ')
+      ? authHeader.replace('Bearer ', '').trim()
+      : authHeader.trim();
+      console.log("Server Page:",token);
       if (token) {
         try {
           const user = jwt.verify(token, process.env.JWT_SECRET);
+          console.log("Server Page:",user);
           return { user };
         } catch (err) {
           console.log('Invalid token');

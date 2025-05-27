@@ -6,28 +6,36 @@ module.exports = gql`
     username: String!
     email: String!
     token: String
+    nativePlace: String
+    address: String
+    mobileNumber: String
+    profilePicture: String
+    coverPicture: String
   }
 
   type Post {
     id: ID!
-    content: String!
-    image: String
-    caption: String
-    createdAt: String
-    likes: Int
-    comments: Int
+    text: String
+    imageBase64: String
     user: User!
+    createdAt: String
   }
 
   type Query {
     login(email: String!, password: String!): User
     getPosts: [Post]
+    getUser(id: ID!): User
+    getUserPosts: [Post]
   }
 
   type Mutation {
-    createPost(content: String!, image: String, caption: String): Post
-    likePost(id: ID!): Post
-    commentPost(id: ID!): Post
-    updatePost(id: ID!, content: String, image: String, caption: String): Post
+    createPost(text: String, imageBase64: String): Post
+    updateUserProfile(
+      nativePlace: String
+      address: String
+      mobileNumber: String
+      profilePicture: String
+      coverPicture: String
+    ): User
   }
 `;

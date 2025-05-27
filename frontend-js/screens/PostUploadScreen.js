@@ -15,18 +15,21 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
+import { convertToBase64 } from '../utils/convertToBase64';
 
 export default function PostUploadScreen() {
   const [image, setImage] = useState(null);
-  const [caption, setCaption] = useState('');
+  const [text, settext] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const { user } = useContext(AuthContext);
-
+  const token = user?.token;
+  // console.log(token);
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
-      quality: 1,
+      quality: 0.8,
+      base64: true,
     });
 
     if (!result.canceled) {
@@ -35,17 +38,54 @@ export default function PostUploadScreen() {
   };
 
   const uploadPost = async () => {
-    if (!image || !caption) {
-      return Alert.alert('Please select an image and enter a caption.');
+    if (!image && !text) {
+      return Alert.alert('Please select an image and enter a text.');
     }
 
-    const formData = new FormData();
-    formData.append('media', {
-      uri: image,
-      type: 'image/jpeg',
-      name: 'upload.jpg',
-    });
-    formData.append('caption', caption);
+    let base64Image = null;
+    if (image) {
+      base64Image = await convertToBase64(image);
+    }
+
+    const mutation = `
+      mutation CreatePost($text: String, $imageBase64: String) {
+        createPost(text: $text, imageBase64: $imageBase64) {
+          id
+          text
+          imageBase64
+          createdAt
+        }
+      }
+    `;
+
+    const variables = {
+      text: text,
+      imageBase64: base64Image, // already base64
+    };
+    try {
+      const res = await fetch('http://192.168.0.137:5000/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ query: mutation, variables }),
+      });
+  
+      const json = await res.json();
+      console.log('GraphQL Response: Success');
+      if (json.errors) throw new Error(json.errors[0].message);
+      if (!json.data || !json.data.createPost) {
+        throw new Error('Post creation failed. No data returned.');
+      }
+      Alert.alert('Post uploaded!');
+      setImage(null);
+      settext('');
+    } catch (err) {
+      console.error('Upload error:', err);
+      Alert.alert('Upload failed', err.message);
+    }
+  
 
     // API call placeholder
   };
@@ -81,10 +121,10 @@ export default function PostUploadScreen() {
 
             <TouchableOpacity
               onPress={uploadPost}
-              disabled={!caption && !image}
+              disabled={!text && !image}
               style={[
                 styles.postButton,
-                { opacity: caption || image ? 1 : 0.5 },
+                { opacity: text || image ? 1 : 0.5 },
               ]}
             >
               <Text style={styles.postButtonText}>Post</Text>
@@ -95,10 +135,10 @@ export default function PostUploadScreen() {
           {/* Text Input */}
           <TextInput
             placeholder="What's on your mind?"
-            value={caption}
-            onChangeText={setCaption}
+            value={text}
+            onChangeText={settext}
             multiline
-            style={styles.captionInput}
+            style={styles.textInput}
           />
           {/* Image Preview */}
           {/* {image && <Image source={{ uri: image }} style={styles.preview} />} */}
@@ -200,7 +240,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   
-  captionInput: {
+  textInput: {
     fontSize: 18,
     minHeight: 80,
     textAlignVertical: 'top',

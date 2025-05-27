@@ -8,6 +8,7 @@ import FeedScreen from '../screens/FeedScreen';
 import PostUploadScreen from '../screens/PostUploadScreen';
 import AboutScreen from '../screens/AboutScreen';
 import MembershipFormScreen from '../screens/MembershipFormScreen';
+import ProfileScreen from '../screens/ProfileScreen.js';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -19,7 +20,7 @@ function MainTabs() {
       <Tab.Screen name="About" component={AboutScreen} />
       <Tab.Screen name="Post" component={PostUploadScreen} />
       <Tab.Screen name="Membership" component={MembershipFormScreen} />
-      <Tab.Screen name="Profile" component={MembershipFormScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
