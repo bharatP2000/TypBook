@@ -16,6 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import { convertToBase64 } from '../utils/convertToBase64';
+import { GRAPHQL_URL } from '../utils/config';
 
 export default function PostUploadScreen() {
   const [image, setImage] = useState(null);
@@ -63,7 +64,7 @@ export default function PostUploadScreen() {
       imageBase64: base64Image, // already base64
     };
     try {
-      const res = await fetch('http://192.168.0.137:5000/graphql', {
+      const res = await fetch(GRAPHQL_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

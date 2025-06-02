@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
+import { GRAPHQL_URL } from '../utils/config';
 
 export default function FeedScreen() {
   const [posts, setPosts] = useState([]);
@@ -25,13 +26,14 @@ export default function FeedScreen() {
           createdAt
           user {
             username
+            profilePicture
           }
         }
       }
     `;
 
     try {
-      const res = await fetch('http://192.168.0.137:5000/graphql', {
+      const res = await fetch(GRAPHQL_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -62,13 +64,13 @@ export default function FeedScreen() {
   }, [isFocused]);
 
   const renderPost = ({ item }) => {
-    // console.log('🖼️ Rendering post:', item);
+    console.log('🖼️ Rendering post:', item);
 
     return (
       <View style={styles.postContainer}>
         {/* Header: profile pic + username */}
         <View style={styles.header}>
-          <Image source={{ uri: '' }} style={styles.profilePic} />
+          <Image source={{ uri: item.user?.profilePicture }} style={styles.profilePic} />
           <Text style={styles.username}>{item.user?.username || 'Unknown'}</Text>
         </View>
 

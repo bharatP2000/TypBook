@@ -60,28 +60,50 @@ module.exports = {
       return await newPost.save();
     },
 
-    updateUserProfile: async (
-      _,
-      { nativePlace, address, mobileNumber, profilePicture, coverPicture },
-      context
-    ) => {
+
+    updateUserProfile: async (_, args, context) => {
+      console.log("Inside update resolver");
+
       const { user } = context;
       if (!user) throw new Error('Not authenticated');
-  
+
+      const {
+        nativePlace,
+        address,
+        mobileNumber,
+        profilePicture,
+        coverPicture
+      } = args;
+
+      const updateData = {
+        ...(nativePlace !== undefined && { nativePlace }),
+        ...(address !== undefined && { address }),
+        ...(mobileNumber !== undefined && { mobileNumber }),
+        ...(profilePicture !== undefined && { profilePicture }),
+        ...(coverPicture !== undefined && { coverPicture }),
+      };
+
+      if (Object.keys(updateData).length === 0) {
+        throw new Error("No fields provided for update.");
+      }
+
       const updatedUser = await User.findByIdAndUpdate(
         user.id,
-        {
-          ...(nativePlace && { nativePlace }),
-          ...(address && { address }),
-          ...(mobileNumber && { mobile: mobileNumber }),
-          ...(profilePicture && { profilePic: profilePicture }),
-          ...(coverPicture && { coverPhoto: coverPicture }),
-        },
+        updateData,
         { new: true }
       );
-  
+
+      if (!updatedUser) {
+        throw new Error('User not found or update failed');
+      }
+
       return updatedUser;
-    },
+    }
+
+
+
+    
+
     // likePost: async (_, { id }) => {
     //   return await Post.findByIdAndUpdate(id, { $inc: { likes: 1 } }, { new: true });
     // },

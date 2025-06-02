@@ -1,5 +1,6 @@
 import React, { createContext, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GRAPHQL_URL } from '../utils/config';
 
 
 export const AuthContext = createContext();
@@ -10,7 +11,7 @@ export const AuthProvider = ({ children }) => {
   const login = async ({ email, password }) => {
     console.log("email:", password)
     try {
-      const response = await fetch('http://192.168.0.137:5000/graphql', {
+      const response = await fetch(GRAPHQL_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
