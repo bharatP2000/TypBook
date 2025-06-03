@@ -5,21 +5,36 @@ import { GRAPHQL_URL } from '../utils/config';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { updateUserProfileFields } from '../utils/userProfileUpdateApi';
 import { pickImage } from '../utils/imagePicker';
-
+import { useIsFocused } from '@react-navigation/native';
+import ProfileHeader from '../components/profileHeader';
+import { ActivityIndicator } from 'react-native';
+import ImageViewing from 'react-native-image-viewing';
 
 export default function ProfileScreen() {
     const [userProfile, setUserProfile] = useState(null);
     const [posts, setPosts] = useState([]);
+    const isFocused = useIsFocused();
     const { user } = useContext(AuthContext);
     const userId = user?.id;
-    const token = user?.token
-    console.log("Profile Screen", userId);
+    const token = user?.token;
+    const [visible, setVisible] = useState(false);
+    const [currentImage, setCurrentImage] = useState(null);
+    // console.log("Profile Screen", userId);
     useEffect(() => {
-        if (userId) {
-            fetchUserProfile(userId);
-            fetchUserPosts(userId);
+        let timeout;
+        if (isFocused && userId) {
+            fetchUserProfile();
+            timeout = setTimeout(() => {
+                fetchUserPosts(userId);
+            }, 300);
         }
-    }, [userId]);
+        return () => clearTimeout(timeout);
+    }, [isFocused, userId]);
+
+    const openImage = (uri) => {
+        setCurrentImage([{ uri }]);
+        setVisible(true);
+    };
 
     const fetchUserProfile = async () => {
         const query = `
@@ -40,7 +55,6 @@ export default function ProfileScreen() {
         body: JSON.stringify({ query }),
         });
         const json = await res.json();
-        console.log("Profile Screen", json);
         setUserProfile(json.data.getUser);
     };
 
@@ -68,7 +82,6 @@ export default function ProfileScreen() {
         });
     
         const json = await res.json();
-        console.log("Profile fetched post", json);
         setPosts(json.data.getPostsByUser);
     };
 
@@ -89,12 +102,11 @@ export default function ProfileScreen() {
         }
     };
       
+
     
 
-    if (!userProfile) return <Text>Loading...</Text>;
+    if (!userProfile) return <ActivityIndicator size="large" color="#000" />;
     const profilePicture = userProfile?.profilePicture;
-    const coverPicture = userProfile?.coverPicture;
-    console.log(profilePicture);
     const renderPost = ({ item }) => {
         // console.log('🖼️ Rendering post:', item);
         return (
@@ -138,58 +150,37 @@ export default function ProfileScreen() {
     };
 
     return (
-        <ScrollView style={styles.container}>
-        {/* Cover Photo */}
-            <View style={{position: 'relative'}}>
-                <TouchableOpacity onPress={() => openProfilePicture()}>
-                    <Image source={{ uri: coverPicture }} style={styles.coverPhoto} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.cameraIconOverlaycover} onPress={() => selectImage('coverPicture')}>
-                    <Icon name="photo-camera" size={18} color="#000" />
-                </TouchableOpacity>
-            </View>
-            
-
-            {/* Profile Picture and Username */}
-            <View style={styles.profileSection}>
-                <View style={{ position: 'relative' }}>
-                {/* View profile picture fullscreen */}
-                    <TouchableOpacity onPress={() => openProfilePicture()}>
-                        <Image source={{ uri: profilePicture }} style={styles.profilePic}/>
-                    </TouchableOpacity>
-                {/* Camera icon for editing */}
-                    <TouchableOpacity style={styles.cameraIconOverlay} onPress={() => selectImage('profilePicture')}>
-                        <Icon name="photo-camera" size={18} color="#000" />
-                    </TouchableOpacity>
-                </View>
-                <Text style={styles.username}>{user.username}</Text>
-            </View>
-            
-
-            {/* User Info */}
-            <View style={styles.infoSection}>
-                <Text>📍 Native Place: {userProfile.nativePlace}</Text>
-                <Text>🏠 Address: {userProfile.address}</Text>
-                <Text>📞 Mobile: {userProfile.mobile}</Text>
-                {/* Add edit logic as needed */}
-            </View>
-
-            {/* Activity Section */}
-            <Text style={styles.sectionTitle}>Activity</Text>
-            <FlatList
-                data={posts}
-                keyExtractor={(item) => item.id}
-                renderItem={renderPost}
-                contentContainerStyle={{ padding: 10 }}
-                ListEmptyComponent={<Text>No posts found.</Text>}
-            />
-        </ScrollView>
+        <>
+        <FlatList
+            data={posts}
+            keyExtractor={(item) => item.id}
+            renderItem={renderPost}
+            ListEmptyComponent={<Text style={{ textAlign: 'center', marginTop: 20 }}>No posts found.</Text>}
+            ListHeaderComponent={
+                () => (
+                <ProfileHeader
+                    user={user}
+                    userProfile={userProfile}
+                    selectImage={selectImage}
+                    openImage={openImage}
+                />
+                )
+            }
+            contentContainerStyle={{ paddingBottom: 40 }}
+        />
+        <ImageViewing
+            images={currentImage || []}
+            imageIndex={0}
+            visible={visible}
+            onRequestClose={() => setVisible(false)}
+        />
+        </>
     );
 }
 
 const styles = StyleSheet.create({
     postContainer: {
-        marginBottom: 20,
+        margin: 15,
         backgroundColor: '#fff',
         borderRadius: 8,
         overflow: 'hidden',

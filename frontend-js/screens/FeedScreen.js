@@ -64,7 +64,7 @@ export default function FeedScreen() {
   }, [isFocused]);
 
   const renderPost = ({ item }) => {
-    console.log('🖼️ Rendering post:', item);
+    // console.log('🖼️ Rendering post:', item);
 
     return (
       <View style={styles.postContainer}>

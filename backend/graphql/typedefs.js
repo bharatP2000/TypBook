@@ -21,11 +21,19 @@ module.exports = gql`
     createdAt: String
   }
 
+  type Notification {
+    id: ID!
+    user: User!
+    message: String!
+    createdAt: String!
+  }
+
   type Query {
     login(email: String!, password: String!): User
     getPosts: [Post]
     getUser(id: ID!): User
     getPostsByUser(userId: ID!): [Post]
+    getAllNotifications(skip: Int, limit: Int): [Notification]
   }
 
   type Mutation {
