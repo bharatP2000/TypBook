@@ -25,7 +25,18 @@ module.exports = gql`
     id: ID!
     user: User!
     message: String!
+    post: Post!
     createdAt: String!
+    seen: Boolean!
+  }
+
+  type Event {
+    id: ID!
+    description: String!
+    date: String!
+    cancelled: Boolean!
+    createdAt: String!
+    createdBy: User!
   }
 
   type Query {
@@ -33,8 +44,11 @@ module.exports = gql`
     getPosts: [Post]
     getUser(id: ID!): User
     getPostsByUser(userId: ID!): [Post]
-    getAllNotifications(skip: Int, limit: Int): [Notification]
+    getAllNotifications(skip: Int, limit: Int, search: String): [Notification]
+    getEvents: [Event]
   }
+
+
 
   type Mutation {
     createPost(text: String, imageBase64: String): Post
@@ -45,5 +59,9 @@ module.exports = gql`
       profilePicture: String
       coverPicture: String
     ): User
+    markNotificationSeen(id: ID!): Notification
+    addEvent(description: String!, date: String!): Event!
+    updateEvent(id: ID!, description: String!, date: String!): Event
+    cancelEvent(id: ID!): Event
   }
 `;

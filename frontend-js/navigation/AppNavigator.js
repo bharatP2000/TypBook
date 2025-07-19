@@ -9,7 +9,7 @@ import LoginScreen from '../screens/LoginScreen';
 import FeedScreen from '../screens/FeedScreen';
 import PostUploadScreen from '../screens/PostUploadScreen';
 import AboutScreen from '../screens/AboutScreen';
-import MembershipFormScreen from '../screens/MembershipFormScreen';
+import EventScreen from '../screens/EventScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import NotificationsScreen from '../screens/NotificationScreen'; // create this if needed
 
@@ -33,7 +33,7 @@ function MainTabs({ navigation }) {
       <Tab.Screen name="Home" component={FeedScreen} />
       <Tab.Screen name="About" component={AboutScreen} />
       <Tab.Screen name="Post" component={PostUploadScreen} />
-      <Tab.Screen name="Membership" component={MembershipFormScreen} />
+      <Tab.Screen name="Events" component={EventScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }) => {
       // console.log(data);
       if (data && data.token) {
         await AsyncStorage.setItem('token', data.token);
+        console.log(data.token);
         setUser(data);
       } else {
         throw new Error('Login failed');

@@ -1,5 +1,6 @@
 const Post = require('../models/post');
 const User = require('../models/user');
+const Event = require('../models/event');
 const Notification = require('../models/notification');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -8,6 +9,11 @@ module.exports = {
   Query: {
     getPosts: async () => {
       return await Post.find().sort({ createdAt: -1 }).populate('user');
+    },
+    getEvents: async () => {
+      console.log("Getting Events")
+      const events = await Event.find().sort({ date: 1 }).populate("createdBy");;
+      return events;
     },
     getUser: async (_, { id }) => {
       return await User.findById(id);
@@ -41,12 +47,16 @@ module.exports = {
         token,
       };
     },
-    getAllNotifications: async (_, { skip = 0, limit = 10 }) => {
-      return await Notification.find()
+    getAllNotifications: async (_, { skip = 0, limit = 10, search='' }) => {
+      const filter = search
+      ? { message: { $regex: search, $options: 'i' } }
+      : {};
+      return await Notification.find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .populate('user'); // Add 'profilePic' in User model
+        .populate('user') // Add 'profilePic' in User model
+        .populate('post');
     },
   },
 
@@ -125,11 +135,49 @@ module.exports = {
       }
 
       return updatedUser;
-    }
+    },
 
+    markNotificationSeen: async (_, { id }) => {
+      return await Notification.findByIdAndUpdate(id, { seen: true }, { new: true });
+    },
 
+    addEvent: async (_, { description, date }, context) => {
+      const { user } = context;
+      if (!user) throw new Error('Not authenticated');
+      console.log(user.id)
+      const newEvent = new Event({
+        description,
+        date,
+        createdBy: user.id, // add user ownership
+        cancelled: false,
+      });
 
-    
+      await newEvent.save();
+
+      return newEvent;
+    },
+
+    updateEvent: async (_, { id, description, date }) => {
+      const updated = await Event.findByIdAndUpdate(
+        id,
+        {
+          description,
+          date: new Date(date),
+        },
+        { new: true }
+      );
+      return updated;
+    },
+
+    cancelEvent: async (_, { id }) => {
+      const cancelled = await Event.findByIdAndUpdate(
+        id,
+        { cancelled: true },
+        { new: true }
+      );
+      return cancelled;
+    },  
+
 
     // likePost: async (_, { id }) => {
     //   return await Post.findByIdAndUpdate(id, { $inc: { likes: 1 } }, { new: true });

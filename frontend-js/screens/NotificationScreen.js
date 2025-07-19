@@ -64,20 +64,34 @@ export default function NotificationsScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <FlatList
-        data={notifications}
+      <FlatList 
+        data={notifications} 
         keyExtractor={item => item.id}
-        renderItem={renderItem}
-        ListFooterComponent={
-          loading ? (
-            <ActivityIndicator />
-          ) : (
-            <TouchableOpacity onPress={fetchNotifications} style={{ padding: 10, alignItems: 'center' }}>
-              <Text style={{ color: 'blue' }}>See more</Text>
+        renderItem={({ item }) => (
+            <TouchableOpacity
+                onPress={() => {
+                    markAsSeen(item.id); // backend call
+                    navigation.navigate('PostDetail', { postId: item.post.id });
+                }}
+                style={{
+                    backgroundColor: item.seen ? '#fff' : '#e6f0ff',
+                    padding: 10,
+                    borderBottomColor: '#ccc',
+                    borderBottomWidth: 1,
+                }}
+            >
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Image source={{ uri: item.user.profilePic }} style={{ width: 40, height: 40, borderRadius: 20 }} />
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                <Text>{item.message}</Text>
+                </View>
+                <Text style={{ color: '#888', marginLeft: 10 }}>
+                {moment(item.createdAt).fromNow(true)} {/* e.g., "2h", "3w" */}
+                </Text>
+            </View>
             </TouchableOpacity>
-          )
-        }
-      />
+            )}
+        />
     </View>
   );
 }
